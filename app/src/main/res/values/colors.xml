@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <array name="selColors">
+        <item>#FFFFFF</item>
+        <item>#000000</item>
+        <item>#0000FF</item>
+        <item>#00FF00</item>
+        <item>#00FFFF</item>
+        <item>#FF0000</item>
+        <item>#FF00FF</item>
+        <item>#FFFF00</item>
+    </array>
+	
+	<color name="grey_100">#F5F5F5</color>
+    <color name="grey_300">#E0E0E0</color>
+
+</resources>
