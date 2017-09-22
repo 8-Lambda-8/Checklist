@@ -42,7 +42,8 @@ public class checklist_item_adapter extends ArrayAdapter<checklist_item> {
 
     }
 
-    public View getView(final int position, View convertView, final ViewGroup parent) {
+    @NonNull
+    public View getView(final int position, View convertView, @NonNull final ViewGroup parent) {
         View v = convertView;
         if (v == null) {
             LayoutInflater inflater = LayoutInflater.from(context);

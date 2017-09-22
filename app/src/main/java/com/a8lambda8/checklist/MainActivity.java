@@ -36,6 +36,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -123,57 +127,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         fab(this);
 
         initList();
-
-
-        /*checklist_item item = new checklist_item();
-        item.setChecked(false);
-        item.setCol(Color.GREEN);
-        //item.setId(ItemList.getItemCount());
-        item.setReminderSet(false);
-        item.setReminderTime(0);
-        item.setText("abcdefg");
-
-        ItemList.addItem(item);
-
-
-        item = new checklist_item();
-        item.setChecked(false);
-        item.setCol(Color.BLUE);
-        //item.setId(ItemList.getItemCount());
-        item.setReminderSet(false);
-        item.setReminderTime(0);
-        item.setText("blabla");
-
-        ItemList.addItem(item);
-
-
-        listAdapter.notifyDataSetInvalidated();
-
-        item = new checklist_item();
-        item.setChecked(false);
-        item.setCol(Color.CYAN);
-        //item.setId(ItemList.getItemCount());
-        item.setReminderSet(false);
-        item.setReminderTime(0);
-        item.setText("1324");
-
-        ItemList.addItem(item);
-
-
-        listAdapter.notifyDataSetInvalidated();
-
-        item = new checklist_item();
-        item.setChecked(false);
-        item.setCol(Color.RED);
-        //item.setId(ItemList.getItemCount());
-        item.setReminderSet(false);
-        item.setReminderTime(0);
-        item.setText("ougmj");
-
-        ItemList.addItem(item);
-
-
-        listAdapter.notifyDataSetInvalidated();*/
 
         registerForContextMenu(Checklist);
 
@@ -331,6 +284,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onClick(View view) {
 
+
                 final AlertDialog.Builder alert = new AlertDialog.Builder(context);
 
                 alert.setTitle("Add Task:");
@@ -339,20 +293,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 final EditText ET_Task = alertView.findViewById(R.id.etTask);
                 final Spinner SP_Col = alertView.findViewById(R.id.spCol);
 
-
-
                 int[] intArray = getResources().getIntArray(R.array.selColors);
-                //List<Integer> spinnerArray = null;
-                for(int i = 0;i<intArray.length;i++){
-                  //  spinnerArray.add(intArray[i]);
+                List<Integer> IntegerArray = new ArrayList<Integer>();
+
+                for(int i = 0; i < intArray.length; i++) {
+                    IntegerArray.add(Integer.valueOf(intArray[i])); // returns Integer value
                 }
 
+                SimpleColorArrayAdapter adapter = new SimpleColorArrayAdapter(alert.getContext(),R.id.spCol, IntegerArray);
 
-                //List<Integer> spinnerArray
+                //Log.i(TAG,adapter.);
 
-                //ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-                  //      context, android.R.layout.simple_spinner_item, spinnerArray);
-
+                SP_Col.setAdapter(adapter);
+                adapter.notifyDataSetChanged();
 
 
                 alert.setView(alertView);
