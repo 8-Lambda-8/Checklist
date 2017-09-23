@@ -11,7 +11,7 @@
         android:icon="@android:drawable/ic_lock_idle_alarm"
         android:title="@string/set_reminder" />
     <item
-        android:id="@+id/item_changeImportance"
+        android:id="@+id/item_edit"
         android:icon="@android:drawable/ic_menu_info_details"
-        android:title="@string/set_importance" />
+        android:title="@string/edit" />
 </menu>
