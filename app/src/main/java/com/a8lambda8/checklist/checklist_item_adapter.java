@@ -42,7 +42,8 @@ public class checklist_item_adapter extends ArrayAdapter<checklist_item> {
 
     }
 
-    public View getView(final int position, View convertView, final ViewGroup parent) {
+    @NonNull
+    public View getView(final int position, View convertView, @NonNull final ViewGroup parent) {
         View v = convertView;
         if (v == null) {
             LayoutInflater inflater = LayoutInflater.from(context);
@@ -63,6 +64,7 @@ public class checklist_item_adapter extends ArrayAdapter<checklist_item> {
         final CheckBox checkbox = v.findViewById(R.id.checkBox);
         ImageView colView = v.findViewById(R.id.ivCol);
 
+        dotButton.setPadding(0,5,0,0);
 
         dotButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -84,13 +86,11 @@ public class checklist_item_adapter extends ArrayAdapter<checklist_item> {
         checkbox.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                dataRef.child("lists").child("testList").child(String.valueOf(position)).child("checked").setValue(checkbox.isChecked());
+                dataRef.child("lists").child(SP.getString("selectedList","testList")).child(String.valueOf(position)).child("checked").setValue(checkbox.isChecked());
             }
         });
 
         colView.setBackgroundColor(((int) item.getCol()));
-
-        //Log.i("xxx",""+Color.BLUE+" "+Color.GREEN+" "+Color.RED);
 
         return v;
 

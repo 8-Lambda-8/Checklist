@@ -3,7 +3,7 @@
     <string name="action_settings">Settings</string>
     <string name="delete">Delete</string>
     <string name="set_reminder">Set Reminder</string>
-    <string name="set_importance">Set Importance</string>
+    <string name="edit">Edit</string>
     <string name="title_activity_main2">Main2Activity</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
@@ -59,8 +59,8 @@
 
     <string name="id_fmt">User ID: %s</string>
     <string name="email_fmt">Email: %s</string>
-
-
+    <string name="add_new_list">Add new List</string>
+    <string name="your_lists">Your Lists:</string>
 
 
 </resources>
