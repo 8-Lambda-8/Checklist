@@ -22,15 +22,14 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ChooserActivity"
-            android:label="@string/label_chooseractivity"/>
-
         <activity
             android:name=".EmailPasswordActivity"
+            android:parentActivityName=".BaseActivity"
             android:label="@string/label_emailpassword"
             android:windowSoftInputMode="stateAlwaysHidden" />
         <activity
             android:name=".GoogleSignInActivity"
+            android:parentActivityName=".BaseActivity"
             android:label="@string/label_google_sign_in" />
     </application>
 

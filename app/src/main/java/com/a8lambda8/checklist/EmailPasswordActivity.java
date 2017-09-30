@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -49,6 +50,10 @@ public class EmailPasswordActivity extends BaseActivity implements
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_emailpassword);
+
+        Log.i(TAG,""+getSupportActionBar());
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         // Views
         mStatusTextView = (TextView) findViewById(R.id.status);
@@ -143,9 +148,11 @@ public class EmailPasswordActivity extends BaseActivity implements
                         }
                         hideProgressDialog();
                         // [END_EXCLUDE]
+                        onBackPressed();
                     }
                 });
         // [END sign_in_with_email]
+
     }
 
     private void signOut() {
@@ -160,6 +167,7 @@ public class EmailPasswordActivity extends BaseActivity implements
         // Send verification email
         // [START send_email_verification]
         final FirebaseUser user = mAuth.getCurrentUser();
+        assert user != null;
         user.sendEmailVerification()
                 .addOnCompleteListener(this, new OnCompleteListener<Void>() {
                     @Override
@@ -241,4 +249,16 @@ public class EmailPasswordActivity extends BaseActivity implements
             sendEmailVerification();
         }
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home ) {
+            finish();
+            return true;
+        }
+        // other menu select events may be present here
+
+        return super.onOptionsItemSelected(item);
+    }
+
 }

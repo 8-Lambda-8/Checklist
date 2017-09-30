@@ -16,7 +16,6 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.util.Log;
@@ -29,6 +28,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -52,7 +52,7 @@ import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends BaseActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     ListView Checklist;
     checklist_item_list ItemList;
@@ -77,6 +77,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private FirebaseAuth.AuthStateListener mAuthListener;
     FirebaseUser user;
 
+    Animation shake;
+
     public static final String TAG = "xxx";
 
     @Override
@@ -96,6 +98,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         SPedit = SP.edit();
         SPedit.apply();
 
+        shake = AnimationUtils.loadAnimation(getBaseContext(), R.anim.shake);
+
         selectedList = SP.getString("selectedList","testList");
         Log.i(TAG,"sel list: "+selectedList);
 
@@ -105,6 +109,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         header = navigationView.getHeaderView(0);
 
         final CircleImageView h_usrPic = header.findViewById(R.id.usrPic);
+        h_usrPic.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                h_usrPic.startAnimation(shake);
+                LogIn();
+            }
+        });
         final TextView h_usrName = header.findViewById(R.id.usrName);
         final TextView h_usrEmail = header.findViewById(R.id.usrEmail);
 
@@ -234,8 +245,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         MenuInflater m = getMenuInflater();
         //Log.i(TAG,""+v.getContext()+"\n"+v.getPaddingTop()+"\n"+v.getId());
         //Log.i(TAG,""+R.id.dotButton);
-        if(v.getId()==R.id.dotButton+4) m.inflate(R.menu.dotbutton_menu, menu);
-        if(v.getId()==R.id.dotButton-4) m.inflate(R.menu.list_dot_menu,menu);
+        if(v.getId()==R.id.dotButton+4){
+            menu.setHeaderTitle(ItemList.getItem(SP.getInt("ContextMenuItemId",0)).getText()+":");
+            m.inflate(R.menu.dotbutton_menu, menu);
+        }
+        if(v.getId()==R.id.dotButton-4){
+
+            //Log.i(TAG,""+v+"\n"+v.getId());
+            menu.setHeaderTitle(ListList.getItem(SP.getInt("ContextMenuListId",0)).getListName()+":");
+            m.inflate(R.menu.list_dot_menu,menu);
+        }
     }
 
     @Override
@@ -248,7 +267,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 for(int i = SP.getInt("ContextMenuItemId",0);i<itemCount-1;i++){
 
                     checklist_item lstItem = ItemList.getItem(i+1);
-
                     ItemSetter(selectedList,String.valueOf(i),lstItem);
 
                 }
@@ -261,7 +279,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             case R.id.item_edit:
 
                 ItemEdit(true,SP.getInt("ContextMenuItemId",0));
-
                 return true;
 
             case R.id.item_setReminder:
@@ -271,7 +288,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             ////Lists:
             case R.id.list_delete:
 
-                Log.i(TAG,"del List");
+                Log.i(TAG,"del List: "+ListList.getItem(SP.getInt("ContextMenuListId",0)).getListName()+"\nid:"+SP.getInt("ContextMenuListId",55));
 
                 return true;
         }
@@ -294,7 +311,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            LogIn();
+            //LogIn();
             return true;
         }
 
@@ -303,7 +320,56 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void LogIn(){
 
-        startActivity(new Intent(this, ChooserActivity.class));
+        if(user!=null){
+
+            Log.i(TAG, String.valueOf(user.getProviderId()));
+            if (Objects.equals(String.valueOf(user.getProviders()), "[google.com]")){
+                startActivity(new Intent(getBaseContext(), GoogleSignInActivity.class));
+                return;
+            }else if (Objects.equals(String.valueOf(user.getProviders()), "[password]")){
+                startActivity(new Intent(getBaseContext(), EmailPasswordActivity.class));
+                return;
+            }
+
+        }
+
+        final AlertDialog.Builder alert = new AlertDialog.Builder(this);
+
+        alert.setTitle("Select Login Method:\n");
+
+        login_menu_list lst = new login_menu_list();
+        lst.clear();
+
+        lst.addItem(new login_menu_item("Google",getResources().getDrawable(R.drawable.googleg_standard_color_18)));
+        lst.addItem(new login_menu_item("Email",getResources().getDrawable(android.R.drawable.ic_dialog_email)));
+
+        ListView LV = new ListView(getBaseContext());
+
+        login_menu_adapter ad = new login_menu_adapter(getBaseContext(),LV.getId(),lst.getAllItems());
+        LV.setAdapter(ad);
+        ad.notifyDataSetInvalidated();
+
+        alert.setView(LV);
+        final AlertDialog dialog = alert.show();
+
+        LV.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+
+                Log.i(TAG,"id of item:"+i);
+                if (i==0){//Google
+
+                    startActivity(new Intent(getBaseContext(), GoogleSignInActivity.class));
+
+                }else if (i==1){ //Email
+
+                    startActivity(new Intent(getBaseContext(), EmailPasswordActivity.class));
+
+                }
+                dialog.cancel();
+
+            }
+        });
 
     }
 
@@ -313,9 +379,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onClick(View view) {
 
-
                 ItemEdit(false,0);
-
 
                 /*Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();*/
@@ -328,7 +392,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
 
-        Log.i(TAG,"groudId:"+item.getGroupId()+"\nItem id:"+item.getItemId()+"\nTitle:  "+item.getTitle());
+        Log.i(TAG,"Switeched To"+"\nTitle:  "+item.getTitle());
         int id = item.getItemId();
         if (id==0) {
 
@@ -365,7 +429,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void ItemEdit(final Boolean edit, final int id){
 
         Context context = this;
-
         final AlertDialog.Builder alert = new AlertDialog.Builder(context);
 
         alert.setTitle("Add Task:");
@@ -376,14 +439,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         final Spinner SP_Col = alertView.findViewById(R.id.spCol);
 
         final int[] intArray = getResources().getIntArray(R.array.selColors);
-        List<Integer> IntegerArray = new ArrayList<Integer>();
-
-        for(int i = 0; i < intArray.length; i++) {
-            IntegerArray.add(Integer.valueOf(intArray[i])); // returns Integer value
+        List<Integer> IntegerArray = new ArrayList<>();
+        for (int anIntArray : intArray) {
+            IntegerArray.add(anIntArray); // returns Integer value
         }
 
         SimpleColorArrayAdapter adapter = new SimpleColorArrayAdapter(alert.getContext(),R.id.spCol, IntegerArray);
-
         SP_Col.setAdapter(adapter);
         adapter.notifyDataSetChanged();
 
@@ -393,7 +454,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             SP_Col.setSelection(IntegerArray.indexOf((int) (long) (ItemList.getItem(id).getCol())));
         }
 
-
         alert.setView(alertView);
         alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
@@ -401,14 +461,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 if(!Objects.equals(ET_Task.getText().toString(), "")) {
 
                     Boolean checked = false;
-                    if(ItemList.getItemCount()!=0) checked = ItemList.getItem(id).getChecked();
+                    if(ItemList.getItemCount()!=0&&edit) checked = ItemList.getItem(id).getChecked();
 
                     checklist_item item = new checklist_item(ET_Task.getText().toString(), intArray[SP_Col.getSelectedItemPosition()], checked, false, 0);
 
                     if(edit){
                         ItemSetter(selectedList,String.valueOf(id),item);
                     }else {
-
                         ItemSetter(selectedList, String.valueOf(itemCount), item);
                         dataRef.child("lists").child(selectedList).child("itemCount").setValue(itemCount + 1);
                     }
@@ -440,7 +499,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 listMenuGroup.clear();
                 m.setGroupCheckable(0,true,true);
                 ListList = new list_List();
-
+                int i = 0;
                 for (final DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
 
                     Button B = new Button(getBaseContext());
@@ -455,12 +514,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                             //.setChecked(Objects.equals(selectedList, postSnapshot.getKey()))
                             .setActionView(B);
 
+                    final int finalI = i;
                     item.getActionView().setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
 
-                            Animation shake = AnimationUtils.loadAnimation(getBaseContext(), R.anim.shake);
                             view.startAnimation(shake);
+                            SPedit.putInt("ContextMenuListId", finalI);
+                            SPedit.apply();
 
                             navigationView.showContextMenuForChild(view);
 
@@ -471,10 +532,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
                     ListList.addItem(new list_(""+postSnapshot.getKey(),""+postSnapshot.child("name").getValue(),""+postSnapshot.child("rights").getValue()));
 
-                    if(Objects.equals(postSnapshot.getKey(), selectedList)){
-                        //listMenuGroup.set
-                        Log.i(TAG,"item id: "+item.getItemId()+"\nsel: "+selectedList+"   :"+item.getTitle());
-                    }
+                    i++;
                 }
 
             }
@@ -542,4 +600,5 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         alert.show();
     }
+
 }
