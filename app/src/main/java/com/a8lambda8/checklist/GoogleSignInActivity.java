@@ -40,6 +40,8 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 /**
  * Demonstrate Firebase Authentication using a Google ID Token.
@@ -59,12 +61,17 @@ public class GoogleSignInActivity extends BaseActivity implements
     private TextView mStatusTextView;
     private TextView mDetailTextView;
 
+    DatabaseReference dataRef;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_google);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        final FirebaseDatabase database = FirebaseDatabase.getInstance();
+        dataRef = database.getReference();
 
 
         // Views
@@ -164,9 +171,6 @@ public class GoogleSignInActivity extends BaseActivity implements
     private void signIn() {
         Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
         startActivityForResult(signInIntent, RC_SIGN_IN);
-
-
-
     }
     // [END signin]
 

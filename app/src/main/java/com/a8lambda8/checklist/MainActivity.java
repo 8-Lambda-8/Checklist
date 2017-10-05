@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -29,6 +30,7 @@ import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -46,6 +48,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,6 +58,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 public class MainActivity extends BaseActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     ListView Checklist;
+    TextView TV_SelList;
     checklist_item_list ItemList;
     checklist_item_adapter listAdapter;
 
@@ -135,6 +139,12 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                     h_usrName.setText(user.getDisplayName());
                     h_usrEmail.setText(user.getEmail());
 
+                    dataRef.child("users").child(user.getUid()).child("email").setValue(encodeAsFirebaseKey(user.getEmail()));
+
+                    dataRef.child("emails").child(encodeAsFirebaseKey(user.getEmail())).setValue(user.getUid());
+
+                    Log.i(TAG,"getPath: "+dataRef.child("emails").child(encodeAsFirebaseKey(user.getEmail())).getParent().getParent().getKey()+"/"+dataRef.child("emails").child(encodeAsFirebaseKey(user.getEmail())).getParent().getKey()+"/"+dataRef.child("emails").child(encodeAsFirebaseKey(user.getEmail())).getKey());
+
                     initNav();
                     initList();
 
@@ -151,6 +161,22 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         ChecklistValEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+
+                if(Objects.equals(dataSnapshot.getValue().toString(), "deleted")){
+
+                    Toast.makeText(getBaseContext(), "Selected List \""+getListName(selectedList)+"\" was deleted by Owner",
+                            Toast.LENGTH_SHORT).show();
+
+                    dataRef.child("users").child(user.getUid()).child("lists").child(selectedList).removeValue();
+
+                    resetList(1);
+
+
+                    return;
+
+                }
+
+
                 ItemList.clear();
 
                 itemCount = (long) dataSnapshot.child("itemCount").getValue();
@@ -196,7 +222,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             public void onCancelled(DatabaseError databaseError) {
 
             }
-        });
+        }); //update list count
 
     }
 
@@ -226,6 +252,9 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
     private void initList() {
 
+        TV_SelList = (TextView) findViewById(R.id.tv_selList);
+        TV_SelList.setPaintFlags(TV_SelList.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+
         Checklist = (ListView) findViewById(R.id.checklist);
         ItemList = new checklist_item_list();
         listAdapter = new checklist_item_adapter(getApplicationContext(),R.id.checklist, ItemList.getAllItems());
@@ -242,10 +271,12 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo){
         super.onCreateContextMenu(menu, v, menuInfo);
 
+        Log.i(TAG,"Clicked item id for ContextMenu:"+v.getId()+"\n"+R.id.dotButton);
+
         MenuInflater m = getMenuInflater();
         //Log.i(TAG,""+v.getContext()+"\n"+v.getPaddingTop()+"\n"+v.getId());
         //Log.i(TAG,""+R.id.dotButton);
-        if(v.getId()==R.id.dotButton+4){
+        if(v.getId()==R.id.dotButton+5){
             menu.setHeaderTitle(ItemList.getItem(SP.getInt("ContextMenuItemId",0)).getText()+":");
             m.inflate(R.menu.dotbutton_menu, menu);
         }
@@ -259,6 +290,10 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+
+        final int idInListList = SP.getInt("ContextMenuListId",0);
+        final list_ lst = ListList.getItem(idInListList);
+
         switch (item.getItemId()) {
 
             ///items:
@@ -288,11 +323,146 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             ////Lists:
             case R.id.list_delete:
 
-                Log.i(TAG,"del List: "+ListList.getItem(SP.getInt("ContextMenuListId",0)).getListName()+"\nid:"+SP.getInt("ContextMenuListId",55));
+                /*final int idInListList = SP.getInt("ContextMenuListId",0);
+                final list_ lst = ListList.getItem(idInListList);*/
+
+
+                Log.i(TAG,"del List: "+lst.getListName()+
+                        "\nid: "+getListID(lst.getListName())+
+                        "\nrights: "+lst.getRights()+
+                        "\nid in LstLst: "+idInListList);
+
+                final AlertDialog.Builder delAlert = new AlertDialog.Builder(this);
+
+                if(Objects.equals(lst.getRights(), "owner")){
+
+                    delAlert.setTitle("Delete List");
+                    delAlert.setMessage("Do you really want to DELETE the list \""+lst.getListName()+"\"?");
+
+                    delAlert.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dataRef.child("lists").child(lst.getListID()).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+
+                                    dataRef.child("lists").child(selectedList).removeEventListener(ChecklistValEventListener);
+
+                                    dataRef.child("lists").child(lst.getListID()).removeValue();
+                                    dataRef.child("lists").child(lst.getListID()).setValue("deleted");
+
+
+                                    for (final DataSnapshot postSnapshot: dataSnapshot.getChildren()) {
+
+                                        Log.i(TAG,"key:"+postSnapshot.getKey()+"\nlstId: "+lst.getListID());
+                                        dataRef.child("users").child(postSnapshot.getKey()).child("lists").child(lst.getListID()).removeValue();
+
+                                    }
+
+                                    if(Objects.equals(selectedList, lst.getListID())){
+                                        if(idInListList==1)resetList(2);
+                                        else resetList(1);
+                                    }
+
+                                }
+
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
+                        }
+                    });
+
+                    delAlert.setNegativeButton("Cancel",null);
+
+                }else if(Objects.equals(lst.getRights(), "read")||Objects.equals(lst.getRights(), "write")){
+
+                    delAlert.setTitle("Remove List");
+                    delAlert.setMessage("Do you really want to Remove the list \""+lst.getListName()+"\" from your Lists?");
+
+                    delAlert.setPositiveButton("Remove", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dataRef.child("users").child(user.getUid()).child("lists").child(lst.getListID()).removeValue();
+                            dataRef.child("lists").child(lst.getListID()).child("users").child(user.getUid()).removeValue();
+                        }
+                    });
+                    delAlert.setNegativeButton("Cancel",null);
+
+                }
+                delAlert.show();
+
+                return true;
+            case R.id.list_share:
+
+                final AlertDialog.Builder shareAlert = new AlertDialog.Builder(this);
+
+                shareAlert.setTitle("Share List");
+
+                shareAlert.setMessage("Enter the Email address of the person you want to share your List:");
+
+                View alertView = getLayoutInflater().inflate(R.layout.dialog_share_list,null);
+
+                final EditText ET_Email = alertView.findViewById(R.id.etEmail);
+                final Spinner SP_Rights = alertView.findViewById(R.id.spRights);
+
+                List<String> items = new ArrayList<>();
+                items.add("read");
+                items.add("write");
+
+                ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, items);
+                spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+                SP_Rights.setAdapter(spinnerAdapter);
+
+                shareAlert.setView(alertView);
+
+
+                shareAlert.setPositiveButton("Share", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                        dataRef.child("emails").child(encodeAsFirebaseKey(ET_Email.getText().toString())).addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                                if (dataSnapshot.getValue()!=null) {
+
+                                    Log.i(TAG,""+SP_Rights.getSelectedItem());
+
+                                    dataRef.child("lists").child(lst.getListID()).child("users").child((String) dataSnapshot.getValue()).setValue(SP_Rights.getSelectedItem());
+                                    dataRef.child("users").child((String) dataSnapshot.getValue()).child("lists").child(lst.getListID()).child("name").setValue(lst.getListName());
+                                    dataRef.child("users").child((String) dataSnapshot.getValue()).child("lists").child(lst.getListID()).child("rights").setValue(SP_Rights.getSelectedItem());
+                                }else {
+                                    Toast.makeText(getBaseContext(), "User not found in Database!", Toast.LENGTH_SHORT).show();
+                                }
+
+                            }
+
+                            @Override
+                            public void onCancelled(DatabaseError databaseError) {
+
+                            }
+                        });
+
+                        ET_Email.getText();
+                    }
+                });
+
+                shareAlert.setNegativeButton("Cancel",null);
+
+                shareAlert.show();
 
                 return true;
         }
         return super.onContextItemSelected(item);
+    }
+
+    private Map<String, String> addData(String str) {
+        Map<String, String> mapList = new HashMap<String, String>();
+        mapList.put("data", str);
+        return mapList;
     }
 
     @Override
@@ -392,17 +562,22 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
 
-        Log.i(TAG,"Switeched To"+"\nTitle:  "+item.getTitle());
         int id = item.getItemId();
+
         if (id==0) {
 
+
             selectedListLast = selectedList;
-            selectedList = getListID(item);
+            selectedList = getListID(item.getTitle().toString());
             SPedit.putString("selectedList", selectedList);
             SPedit.apply();
+            TV_SelList.setText(getListName(selectedList)+":");
 
             dataRef.child("lists").child(selectedListLast).removeEventListener(ChecklistValEventListener);
             dataRef.child("lists").child(selectedList).addValueEventListener(ChecklistValEventListener);
+
+
+            Log.i(TAG,"Switeched To"+"\nTitle:  "+item.getTitle()+"\n"+getListName(selectedList));
 
             DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
             drawer.closeDrawer(GravityCompat.START);
@@ -535,6 +710,8 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                     i++;
                 }
 
+                TV_SelList.setText(getListName(selectedList)+":");
+
             }
 
             @Override
@@ -545,11 +722,23 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     }
 
     @Nullable
-    private String getListID(MenuItem item){
+    private String getListID(String item){
+
         for (int i =0;i<ListList.getItemCount();i++) {
-            if (Objects.equals(ListList.getItem(i).getListName(), item.getTitle().toString())){
+            if (Objects.equals(ListList.getItem(i).getListName(), item)){
                 //Log.i(TAG,"loop checker "+":"+ListList.getItem(i).getListName()+" == "+item);
                 return ListList.getItem(i).getListID();
+
+            }
+        }
+        return null;
+    }
+
+    private String getListName(String id) {
+        for (int i =0;i<ListList.getItemCount();i++) {
+            if (Objects.equals(ListList.getItem(i).getListID(), id)){
+                //Log.i(TAG,"loop checker "+":"+ListList.getItem(i).getListName()+" == "+item);
+                return ListList.getItem(i).getListName();
 
             }
         }
@@ -578,6 +767,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                 newList.put("itemCount",0);
                 newList.put("name",input.getText().toString());
                 newList.put("owner",user.getUid());
+                //newList.put("users",new ArrayMap<>().put(user.getUid(),"owner"));
 
                 Map newUserListEntry = new ArrayMap();
                 newUserListEntry.put("name",input.getText().toString());
@@ -587,6 +777,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
                 dataRef.child("users").child(""+user.getUid()).child("lists").child(""+listCount).setValue(newUserListEntry);
                 dataRef.child("lists").child(""+listCount).setValue(newList);
+                dataRef.child("lists").child(listCount+"/users").child(user.getUid()).setValue("owner");
                 dataRef.child("lists").child("listCount").setValue(listCount+1);
 
             }
@@ -599,6 +790,40 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         });
 
         alert.show();
+    }
+
+    private void resetList(int i){
+        selectedListLast = selectedList;
+        selectedList = ListList.getItem(i).getListID();
+        Log.i(TAG,"id: "+ListList.getItem(i).getListID());
+        SPedit.putString("selectedList", selectedList);
+        SPedit.apply();
+        TV_SelList.setText(getListName(selectedList)+":");
+
+        dataRef.child("lists").child(selectedListLast).removeEventListener(ChecklistValEventListener);
+        dataRef.child("lists").child(selectedList).addValueEventListener(ChecklistValEventListener);
+    }
+
+    String encodeAsFirebaseKey(String string) {
+        string = string.replace("%", "%25");
+        string = string.replace(".", "%2E");
+        string = string.replace("#", "%23");
+        string = string.replace("$", "%24");
+        string = string.replace("/", "%2F");
+        string = string.replace("[", "%5B");
+        string = string.replace("]", "%5D");
+        return string;
+    };
+
+    String decodeFromFirebaseKey(String string) {
+        string = string.replace("%25", "%");
+        string = string.replace("%2E", ".");
+        string = string.replace("%23", "#");
+        string = string.replace("%24", "$");
+        string = string.replace("%2F", "/");
+        string = string.replace("%5B", "[");
+        string = string.replace("%5D", "]");
+        return string;
     }
 
 }
