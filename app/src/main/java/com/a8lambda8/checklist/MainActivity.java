@@ -48,7 +48,6 @@ import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -323,9 +322,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
             ////Lists:
             case R.id.list_delete:
 
-                /*final int idInListList = SP.getInt("ContextMenuListId",0);
-                final list_ lst = ListList.getItem(idInListList);*/
-
 
                 Log.i(TAG,"del List: "+lst.getListName()+
                         "\nid: "+getListID(lst.getListName())+
@@ -374,7 +370,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                         }
                     });
 
-                    delAlert.setNegativeButton("Cancel",null);
 
                 }else if(Objects.equals(lst.getRights(), "read")||Objects.equals(lst.getRights(), "write")){
 
@@ -388,10 +383,50 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                             dataRef.child("lists").child(lst.getListID()).child("users").child(user.getUid()).removeValue();
                         }
                     });
-                    delAlert.setNegativeButton("Cancel",null);
 
                 }
+                delAlert.setNegativeButton("Cancel",null);
                 delAlert.show();
+
+                return true;
+            case R.id.list_edit:
+
+                final AlertDialog.Builder editAlert = new AlertDialog.Builder(this);
+
+                final EditText ET_edit_lst = new EditText(this);
+                ET_edit_lst.setText(lst.getListName());
+                editAlert.setTitle("Edit "+lst.getListName())
+                        .setView(ET_edit_lst)
+                        .setMessage("New Title for \""+lst.getListName()+"\":")
+                        .setNegativeButton("Cancel",null);
+
+                if(Objects.equals(lst.getRights(), "owner")){
+
+                    editAlert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                            dataRef.child("lists").child(lst.getListID()).child("name").setValue(ET_edit_lst.getText().toString());
+                            dataRef.child("users").child(user.getUid()).child("lists").child(lst.getListID()).child("name").setValue(ET_edit_lst.getText().toString());
+
+                        }
+                    });
+
+                }else if(Objects.equals(lst.getRights(), "read")||Objects.equals(lst.getRights(), "write")) {
+
+                    editAlert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                            dataRef.child("users").child(user.getUid()).child("lists").child(lst.getListID()).child("name").setValue(ET_edit_lst.getText().toString());
+
+                        }
+                    });
+
+                }
+
+                editAlert.show();
+
 
                 return true;
             case R.id.list_share:
@@ -417,7 +452,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                 SP_Rights.setAdapter(spinnerAdapter);
 
                 shareAlert.setView(alertView);
-
 
                 shareAlert.setPositiveButton("Share", new DialogInterface.OnClickListener() {
                     @Override
@@ -457,12 +491,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                 return true;
         }
         return super.onContextItemSelected(item);
-    }
-
-    private Map<String, String> addData(String str) {
-        Map<String, String> mapList = new HashMap<String, String>();
-        mapList.put("data", str);
-        return mapList;
     }
 
     @Override

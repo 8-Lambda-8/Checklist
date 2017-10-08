@@ -49,5 +49,7 @@
     <string name="email_fmt">Email: %s</string>
     <string name="add_new_list">Add new List</string>
     <string name="your_lists">Your Lists:</string>
+    <string name="configure_widget_text">Select list for Widget:</string>
+    <string name="add_widget">Add widget</string>
 
 </resources>

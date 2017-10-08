@@ -21,16 +21,31 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".EmailPasswordActivity"
-            android:parentActivityName=".BaseActivity"
             android:label="@string/label_emailpassword"
+            android:parentActivityName=".BaseActivity"
             android:windowSoftInputMode="stateAlwaysHidden" />
         <activity
             android:name=".GoogleSignInActivity"
-            android:parentActivityName=".BaseActivity"
-            android:label="@string/label_google_sign_in" />
+            android:label="@string/label_google_sign_in"
+            android:parentActivityName=".BaseActivity" />
+
+        <receiver android:name=".ChecklistWidget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/checklist_widget_info" />
+        </receiver>
+
+        <activity android:name=".ChecklistWidgetConfigureActivity">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
