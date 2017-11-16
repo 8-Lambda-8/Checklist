@@ -3,13 +3,10 @@ package com.a8lambda8.checklist;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.util.Log;
 import android.widget.RemoteViews;
-
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 /**
  * Implementation of App Widget functionality.
@@ -18,34 +15,27 @@ import com.google.firebase.database.ValueEventListener;
 public class ChecklistWidget extends AppWidgetProvider {
 
 
-    static void updateAppWidget(Context context, AppWidgetManager appWidgetManager,
+    static void updateAppWidget(final Context context, AppWidgetManager appWidgetManager,
                                 int appWidgetId) {
 
-        final FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference dataRef = database.getReference();
-
-        String widgetLstID = ChecklistWidgetConfigureActivity.loadPref(context, appWidgetId);
-
-
-        ValueEventListener VEL = new ValueEventListener(){
-
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-
-        dataRef.child("lists").child(widgetLstID).removeEventListener(VEL);
-        dataRef.child("lists").child(widgetLstID).addValueEventListener(VEL);
+        String widgetLstID = ChecklistWidgetConfigureActivity.loadPref(context, appWidgetId)[0];
+        String widgetLstName = ChecklistWidgetConfigureActivity.loadPref(context, appWidgetId)[1];
 
         // Construct the RemoteViews object
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.checklist_widget);
-        views.setTextViewText(R.id.tv_checklist_name, widgetLstID);
+        final RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.checklist_widget);
+
+        views.setTextViewText(R.id.tv_checklist_name, widgetLstName);
+
+        Intent serviceIntent = new Intent(context, ChecklistWidgetService.class);
+        serviceIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+        serviceIntent.setData(Uri.parse(serviceIntent.toUri(Intent.URI_INTENT_SCHEME)));
+
+        views.setRemoteAdapter(R.id.lv_widget,serviceIntent);
+        views.setEmptyView(R.id.lv_widget,android.R.id.empty);
+
+
+        Log.i("ccc","in \"updateAppWidget\"");
+
 
         // Instruct the widget manager to update the widget
         appWidgetManager.updateAppWidget(appWidgetId, views);

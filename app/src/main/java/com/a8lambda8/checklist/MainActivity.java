@@ -29,6 +29,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -48,6 +49,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -83,6 +86,8 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     Animation shake;
 
     public static final String TAG = "xxx";
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,6 +129,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
         mAuth = FirebaseAuth.getInstance();
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
+        database.setPersistenceEnabled(true);
         dataRef = database.getReference();
 
         mAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -138,8 +144,9 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                     h_usrName.setText(user.getDisplayName());
                     h_usrEmail.setText(user.getEmail());
 
-                    dataRef.child("users").child(user.getUid()).child("email").setValue(encodeAsFirebaseKey(user.getEmail()));
+                    SPedit.putString("Uid",user.getUid());
 
+                    dataRef.child("users").child(user.getUid()).child("email").setValue(encodeAsFirebaseKey(user.getEmail()));
                     dataRef.child("emails").child(encodeAsFirebaseKey(user.getEmail())).setValue(user.getUid());
 
                     Log.i(TAG,"getPath: "+dataRef.child("emails").child(encodeAsFirebaseKey(user.getEmail())).getParent().getParent().getKey()+"/"+dataRef.child("emails").child(encodeAsFirebaseKey(user.getEmail())).getParent().getKey()+"/"+dataRef.child("emails").child(encodeAsFirebaseKey(user.getEmail())).getKey());
@@ -170,11 +177,10 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
                     resetList(1);
 
-
                     return;
-
                 }
 
+                int scroll = Checklist.getFirstVisiblePosition();
 
                 ItemList.clear();
 
@@ -190,10 +196,10 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                         item.setChecked((Boolean) dataSnapshot.child(String.valueOf(i)).child("checked").getValue());
                     if(dataSnapshot.child(String.valueOf(i)).child("col").getValue()!=null)
                         item.setCol((Long) dataSnapshot.child(String.valueOf(i)).child("col").getValue());
-                    if(dataSnapshot.child(String.valueOf(i)).child("remSet").getValue()!=null)
+                    /*if(dataSnapshot.child(String.valueOf(i)).child("remSet").getValue()!=null)
                         item.setReminderSet((Boolean) dataSnapshot.child(String.valueOf(i)).child("remSet").getValue());
                     if(dataSnapshot.child(String.valueOf(i)).child("remTime").getValue()!=null)
-                        item.setReminderTime((Long) dataSnapshot.child(String.valueOf(i)).child("remTime").getValue());
+                        item.setReminderTime((Long) dataSnapshot.child(String.valueOf(i)).child("remTime").getValue());*/
 
                     ItemList.addItem(item);
 
@@ -201,6 +207,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
                 listAdapter.notifyDataSetInvalidated();
 
+                Checklist.setSelection(scroll);
             }
 
             @Override
@@ -264,18 +271,41 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         registerForContextMenu(Checklist);
         registerForContextMenu(navigationView);
 
+        Checklist.setOnScrollListener(new AbsListView.OnScrollListener() {
+
+            int lastFirst=0;
+
+            @Override
+            public void onScrollStateChanged(AbsListView absListView, int i) {
+
+            }
+
+            @Override
+            public void onScroll(AbsListView absListView, int firstVis, int countVis, int total) {
+
+                //Log.i(TAG,"pos:    "+firstVis+"\nlastPos:"+lastFirst+"\n");
+                if (lastFirst != firstVis){
+
+                    //Log.i(TAG,"different!!");
+                    //Checklist.setSelection(firstVis);
+
+                    lastFirst = firstVis;
+                }
+            }
+        });
+
     }
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo){
         super.onCreateContextMenu(menu, v, menuInfo);
 
-        Log.i(TAG,"Clicked item id for ContextMenu:"+v.getId()+"\n"+R.id.dotButton);
+        Log.i(TAG,"Clicked item id for ContextMenu: "+v.getId()+"\nId of dotButton: "+R.id.dotButton);
 
         MenuInflater m = getMenuInflater();
         //Log.i(TAG,""+v.getContext()+"\n"+v.getPaddingTop()+"\n"+v.getId());
         //Log.i(TAG,""+R.id.dotButton);
-        if(v.getId()==R.id.dotButton+5){
+        if(v.getId()==R.id.dotButton+11){
             menu.setHeaderTitle(ItemList.getItem(SP.getInt("ContextMenuItemId",0)).getText()+":");
             m.inflate(R.menu.dotbutton_menu, menu);
         }
@@ -547,6 +577,8 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         LV.setAdapter(ad);
         ad.notifyDataSetInvalidated();
 
+        alert.setCancelable(user!=null);
+
         alert.setView(LV);
         final AlertDialog dialog = alert.show();
 
@@ -594,7 +626,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
         if (id==0) {
 
-
             selectedListLast = selectedList;
             selectedList = getListID(item.getTitle().toString());
             SPedit.putString("selectedList", selectedList);
@@ -624,8 +655,8 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         dataRef.child("lists").child(list).child(itemNr).child("checked")   .setValue(item.getChecked());
         dataRef.child("lists").child(list).child(itemNr).child("col")       .setValue(item.getCol());
 
-        dataRef.child("lists").child(list).child(itemNr).child("remSet")    .setValue(item.getReminderSet());
-        dataRef.child("lists").child(list).child(itemNr).child("remTime")   .setValue(item.getReminderTime());
+        /*dataRef.child("lists").child(list).child(itemNr).child("remSet")    .setValue(item.getReminderSet());
+        dataRef.child("lists").child(list).child(itemNr).child("remTime")   .setValue(item.getReminderTime());*/
 
     }
 
@@ -789,7 +820,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
 
-
                 Map newList = new ArrayMap();
 
                 newList.put("itemCount",0);
@@ -841,7 +871,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         string = string.replace("[", "%5B");
         string = string.replace("]", "%5D");
         return string;
-    };
+    }
 
     String decodeFromFirebaseKey(String string) {
         string = string.replace("%25", "%");
@@ -852,6 +882,18 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         string = string.replace("%5B", "[");
         string = string.replace("%5D", "]");
         return string;
+    }
+
+    private Dictionary<Integer, Integer> listViewItemHeights = new Hashtable<Integer, Integer>();
+    private int getScroll() {
+        View c = Checklist.getChildAt(0); //this is the first visible row
+        int scrollY = -c.getTop();
+        listViewItemHeights.put(Checklist.getFirstVisiblePosition(), c.getHeight());
+        for (int i = 0; i < Checklist.getFirstVisiblePosition(); ++i) {
+            if (listViewItemHeights.get(i) != null) // (this is a sanity check)
+                scrollY += listViewItemHeights.get(i); //add all heights of the views that are gone
+        }
+        return scrollY;
     }
 
 }

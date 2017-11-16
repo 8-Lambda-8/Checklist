@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
@@ -37,6 +38,8 @@ public class ChecklistWidgetConfigureActivity extends Activity {
 
     list_List ListList;
 
+    String Uid;
+
     private static final String PREFS_NAME = "com.a8lambda8.checklist.ChecklistWidget";
     private static final String PREF_PREFIX_KEY = "appwidget_";
     int mAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
@@ -46,8 +49,10 @@ public class ChecklistWidgetConfigureActivity extends Activity {
             final Context context = ChecklistWidgetConfigureActivity.this;
 
             // When the button is clicked, store the string locally
-            String widgetLstID = (String) ListList.getItem(mAppWidgetSpinner.getSelectedItemPosition()).getListID();
-            savePref(context, mAppWidgetId, widgetLstID,user.getUid());
+            String widgetLstID = ListList.getItem(mAppWidgetSpinner.getSelectedItemPosition()).getListID();
+            String widgetLstName = ListList.getItem(mAppWidgetSpinner.getSelectedItemPosition()).getListName();
+
+            savePref(context, mAppWidgetId, widgetLstID, widgetLstName);
 
             Log.i("yyy","lst id for widget: "+ widgetLstID);
 
@@ -68,23 +73,25 @@ public class ChecklistWidgetConfigureActivity extends Activity {
     }
 
     // Write the prefix to the SharedPreferences object for this widget
-    static void savePref(Context context, int appWidgetId, String lst,String usr) {
+    static void savePref(Context context, int appWidgetId, String lst,String name) {
         SharedPreferences.Editor prefs = context.getSharedPreferences(PREFS_NAME, 0).edit();
         prefs.putString(PREF_PREFIX_KEY + appWidgetId+"_lst", lst);
-        prefs.putString(PREF_PREFIX_KEY + appWidgetId+"_usr", usr);
+        prefs.putString(PREF_PREFIX_KEY + appWidgetId+"_name", name);
         prefs.apply();
     }
 
     // Read the prefix from the SharedPreferences object for this widget.
     // If there is no preference saved, get the default from a resource
-    static String loadPref(Context context, int appWidgetId) {
+    static String[] loadPref(Context context, int appWidgetId) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, 0);
         String lstId = prefs.getString(PREF_PREFIX_KEY + appWidgetId+"_lst", null);
-        String usr = prefs.getString(PREF_PREFIX_KEY + appWidgetId+"_usr", null);
-        if (lstId != null&&usr !=null) {
-            return lstId;
+        String lstName = prefs.getString(PREF_PREFIX_KEY + appWidgetId+"_name", null);
+
+
+        if (lstId != null&&lstName !=null) {
+            return new String[]{lstId,lstName};
         } else {
-            return "-";
+            return new String[]{"-","-"};
 
         }
     }
@@ -129,12 +136,13 @@ public class ChecklistWidgetConfigureActivity extends Activity {
 
         ListList = new list_List();
 
-        dataRef.child("users").child(user.getUid()).child("lists").addListenerForSingleValueEvent(new ValueEventListener() {
+        Uid = PreferenceManager.getDefaultSharedPreferences(this).getString("Uid","x");
+
+        dataRef.child("users").child(Uid).child("lists").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 
                 Log.i("yyy","in on data getter");
-
 
                 List<String> items = new ArrayList<>();
 
@@ -172,10 +180,8 @@ public class ChecklistWidgetConfigureActivity extends Activity {
         // If this activity was started with an intent without an app widget ID, finish with an error.
         if (mAppWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             finish();
-            return;
         }
 
-        //mAppWidgetText.setText(loadTitlePref(ChecklistWidgetConfigureActivity.this, mAppWidgetId));
     }
 }
 

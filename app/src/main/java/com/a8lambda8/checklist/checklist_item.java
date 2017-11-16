@@ -26,7 +26,6 @@ public class checklist_item {
 
     }
 
-
     /*public int getId() {
         return id;
     }
@@ -59,7 +58,7 @@ public class checklist_item {
         this.checked = checked;
     }
 
-    public Boolean getReminderSet() {
+    /*public Boolean getReminderSet() {
         return reminderSet;
     }
 
@@ -73,5 +72,5 @@ public class checklist_item {
 
     public void setReminderTime(long reminderTime) {
         this.reminderTime = reminderTime;
-    }
+    }*/
 }
